@@ -3,6 +3,7 @@ import bs4
 from bs4 import BeautifulSoup
 import requests
 import os
+import time
 
 load_dotenv()
 
@@ -42,7 +43,9 @@ def parse_page(html: str) -> str:
         "installment_price": installment_price
     }
 
-if __name__ == "__main__": 
-    page_content = fetch_page(URL_TO_SCRAPE)
-    product_info = parse_page(page_content)
-    print(product_info)
+if __name__ == "__main__":
+    while True:
+        page_content = fetch_page(URL_TO_SCRAPE)
+        product_info = parse_page(page_content)
+        print(product_info)
+        time.sleep(10)
