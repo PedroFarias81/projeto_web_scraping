@@ -12,7 +12,6 @@ import os
 load_dotenv()
 
 URL_TO_SCRAPE = os.getenv('URL_TO_SCRAPE')
-USER_AGENT = os.getenv("USER_AGENT")
 
 def fetch_page(url: str, user_agent: str) -> str:
     """
@@ -68,7 +67,7 @@ async def main():
     try:
         while True:
             #Carregando, tratando e salvando o dado no banco de dados
-            page_content = fetch_page(URL_TO_SCRAPE, USER_AGENT)
+            page_content = fetch_page(URL_TO_SCRAPE, 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15')
             product_info = parse_page(page_content)
 
             #Pegando o preço e data do valor máximo até então no banco de dados
