@@ -1,8 +1,7 @@
-from bs4 import BeautifulSoup
-from dotenv import load_dotenv
-from db_connection import *
+from db_connection_postgres import *
 from telegram_connection import *
-import pandas as pd
+from dotenv import load_dotenv
+from bs4 import BeautifulSoup
 import numpy as np
 import requests
 import asyncio
@@ -29,7 +28,7 @@ def fix_prices_from_html(price_tag: bs4.element.Tag) -> int:
     price = price_tag.get_text().replace(".", "")
     return int(price)
 
-def parse_page(html: str) -> str:
+def parse_page(html: str) -> dict:
     """
     Alguma docstring
     """
@@ -57,58 +56,46 @@ def parse_page(html: str) -> str:
         "created_at": timestamp
     }
 
-def save_to_database(product_info: dict, conn: sqlite3.Connection) -> None:
-    """
-    Alguma docstring
-    """
-    new_row = pd.DataFrame([product_info])
-    new_row.to_sql('prices', conn, if_exists='append', index=False)
-
-def get_max_prices(conn: sqlite3.Connection):
-    """
-    Alguma docstring
-    """
-    cursor = conn.cursor()
-    cursor.execute(
-        '''
-        SELECT MAX(new_price), created_at FROM prices
-        '''
-    )
-    result = cursor.fetchone()
-    return result[0], result[1]
-
 async def main():
     
     #Criando a conexão com o banco de dados
-    conn = create_connection('iphone_prices.db')
+    conn = create_connection()
     setup_database(conn)
 
     #Criando a conexão com o Telegram
     bot = configure_telegram_session()
+    
+    try:
+        while True:
+            #Carregando, tratando e salvando o dado no banco de dados
+            page_content = fetch_page(URL_TO_SCRAPE, USER_AGENT)
+            product_info = parse_page(page_content)
 
-    while True:
+            #Pegando o preço e data do valor máximo até então no banco de dados
+            max_price, max_timestamp = get_max_price(conn)
+            current_price = product_info["new_price"]
+            current_timestamp = product_info["created_at"]
 
-        #Carregando, tratando e salvando o dado no banco de dados
-        page_content = fetch_page(URL_TO_SCRAPE, USER_AGENT)
-        product_info = parse_page(page_content)
-        save_to_database(product_info, conn)
+            #Caso o preço atual for maior que o maior preço até então mandar uma mensagem pelo telegram
+            if max_price is None or current_price > max_price:
+                message = f"Preço maior encontrado!: {current_price} em {current_timestamp}" 
+                print(message)
+                max_price = current_price
+                max_timestamp = current_timestamp
+            else:
+                message = f"O maior preço registrado é {max_price} em {max_timestamp}"
+                print(message)
 
-        #Pegando o preço e data do valor máximo até então no banco de dados
-        max_price, max_timestamp = get_max_prices(conn)
-        current_price = product_info["new_price"]
-        current_timestamp = product_info["created_at"]
+            await send_telegram_message(bot, message=message)
 
-        #Caso o preço atual for maior que o maior preço até então mandar uma mensagem pelo telegram
-        if current_price > max_price:
-            print(f"Preço maior encontrado!: {current_price} em {current_timestamp}")
-            await send_telegram_message(bot, message=f"Preço maior encontrado!: {current_price} em {current_timestamp}")
-            max_price = current_price
-            max_timestamp = current_timestamp
-        else:
-            print(f"O maior preço registrado é {max_price} em {max_timestamp}")
-            await send_telegram_message(bot, message=f"O maior preço registrado é {max_price} em {max_timestamp}")
+            save_to_database(product_info)
+            print(f"Dados Salvo no Banco de Dados!, {product_info}")
+            await asyncio.sleep(20)
 
-        print(f"Dados Salvo no Banco de Dados!, {product_info}")
-        await asyncio.sleep(20)
+    except KeyboardInterrupt:
+        print("Parando a execução...")
+
+    finally:
+        conn.close()
 
 asyncio.run(main=main())
