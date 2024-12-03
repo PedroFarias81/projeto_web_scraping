@@ -15,21 +15,43 @@ URL_TO_SCRAPE = os.getenv('URL_TO_SCRAPE')
 
 def fetch_page(url: str, user_agent: str) -> str:
     """
-    Alguma docstring
+    Função responsável por carregar o contéudo html do 
+    site no formato de texto
+
+    Args:
+        url (str): URL do site em questão
+        user_agent (str): User-Agent para assegurar a requisição 
+
+    Returns:
+        str: Conteúdo total do site no formato de texto
     """
     response = requests.get(url, headers={"User-Agent": user_agent})
     return response.text
 
 def fix_prices_from_html(price_tag: bs4.element.Tag) -> int:
     """
-    Alguma docstring
+    Função responsável por ajustar o preço em string e 
+    transformar para float
+
+    Args:
+        price_tag (bs4.element.Tag): tag html onde está o preço
+
+    Returns:
+        int: Preço formatado em inteiro
     """
     price = price_tag.get_text().replace(".", "")
     return int(price)
 
 def parse_page(html: str) -> dict:
     """
-    Alguma docstring
+    Função responsável por selecionar apenas os campos
+    importantes do html total
+
+    Args:
+        html (str): HTML original do site
+
+    Returns:
+        dict: Um dicionário contendo os campos importantes
     """
     soup = BeautifulSoup(html, "html.parser")
     product_name = soup.find('h1', class_="ui-pdp-title").get_text()

@@ -19,7 +19,11 @@ engine = create_engine(DATABASE_URL)
 
 def create_connection() -> psycopg2.extensions.connection:
     """
-    Alguma Docstring
+    Função responsável por realizar a conexão com o banco de dados
+    Postgres
+
+    Returns:
+        psycopg2.extensions.connection: Conexão com o Postgres
     """
     conn = psycopg2.connect(
         dbname=POSTGRES_DB,
@@ -32,7 +36,7 @@ def create_connection() -> psycopg2.extensions.connection:
 
 def setup_database(conn: psycopg2.extensions.connection) -> None:
     """
-    Alguma Docstring
+    Função responsável por criar a tabela no banco de dados
     """
     cursor = conn.cursor()
     cursor.execute(
@@ -52,7 +56,7 @@ def setup_database(conn: psycopg2.extensions.connection) -> None:
 
 def save_to_database(data: dict, table_name='prices'):
     """
-    Alguma docstring
+    Função responsável por salvar o dicionário no banco de dados
     """
     df = pd.DataFrame([data])
     # Usa SQLAlchemy para salvar os dados no PostgreSQL
@@ -60,7 +64,8 @@ def save_to_database(data: dict, table_name='prices'):
 
 def get_max_price(conn: psycopg2.extensions.connection) -> tuple:
     """
-    Alguma docstring
+    Função responśavel em pegar o preço máximo e a data até então
+    dentro do banco de dados
     """
     cursor = conn.cursor()
     cursor.execute(
